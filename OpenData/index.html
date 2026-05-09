@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADA IA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .neural-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: rgba(255, 215, 0, 0.8);
+            border-radius: 50%;
+        }
+    </style>
+    <script>
+        // Redirect to loading page if coming directly
+        if(!document.referrer.includes('loading.html')) {
+            window.location.href = 'loading.html';
+        }
+    </script>
+</head>
+<body>
+    <canvas id="starfield-canvas"></canvas>
+    <div class="app-container">
+        <h1 class="app-title">ADA</h1>
+        <p class="app-subtitle">Tu Asesora en Comercio Internacional e Inversión</p>
+        
+        <div class="cards-container">
+            <div class="app-card" data-card="info">
+                <div class="card-icon">🎇</div>
+                <h3>Conoce ADA</h3>
+                <p>Datos esenciales sobre ADA IA</p>
+                <div class="card-indicator"></div>
+            </div>
+            
+            <div class="app-card" data-card="video">
+                <div class="card-icon">▶️</div>
+                <h3>Video Adicional</h3>
+                <p>Mira un video corto sobre la experiencia</p>
+                <div class="card-indicator"></div>
+            </div>
+        </div>
+        
+        <div class="content-panel" id="content-panel">
+            <div class="panel-header">
+                <button class="close-btn" id="close-btn">×</button>
+                <h2 id="panel-title">Título</h2>
+            </div>
+            <div class="panel-content" id="panel-content">
+                <!-- Content will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="app-dock" id="app-dock">
+        <div class="dock-item" data-action="chat">
+            <img src="/logoADA.png" alt="ADA IA">
+            <span>ADA IA</span>
+        </div>
+        <div class="dock-item" data-action="history">
+            <img src="/asset_history_icon.png" alt="Consultas Anteriores">
+            <span>Historial</span>
+        </div>
+      <!-- MEJORAR
+        <div class="dock-item" data-action="recommendations">
+            <img src="/asset_recommend_icon.png" alt="Recomendaciones">
+            <span>Cultura Viva Mx</span>
+        </div> -->
+        <div class="dock-item" data-action="telegram">
+            <img src="/telegram_icon.png" alt="Telegram">
+            <span>Telegram</span>
+        </div>
+        <div class="dock-item" data-action="download-pdf">
+            <img src="/asset_download_icon.png" alt="Copiar Texto">
+            <span>Reporte</span>
+        </div>
+      
+    </div>
+
+    <div class="dock-panel" id="dock-panel">
+        <div class="panel-header">
+            <h2 id="dock-panel-title">Título Dock</h2>
+            <button class="close-btn" id="dock-close-btn">×</button>
+        </div>
+        <div class="panel-content" id="dock-panel-content">
+            <!-- Content will be dynamically loaded here -->
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script type="module" src="starfield.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>

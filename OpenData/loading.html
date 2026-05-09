@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenidos - Laboratorio ADA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Ubuntu Mono', monospace;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .enter-button {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            background: transparent;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Ubuntu Mono', monospace;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .enter-button:hover {
+            background: #ffffff;
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .logo {
+            width: 250px;
+            height: auto;
+            margin-bottom: 20px;
+            filter: sepia(0%) brightness(1.2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="content">
+        <img src="/logoADA.png" alt="Laboratorio ADA Logo" class="logo">
+        <h1>ADA IA</h1>
+        <button class="enter-button" onclick="window.location.href='index.html'">Ingresar</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        setCanvasSize();
+        window.addEventListener('resize', setCanvasSize);
+
+        // Neural network nodes
+        const nodes = [];
+        const numNodes = 30;
+        const connections = [];
+        const connectionProbability = 0.3;
+
+        // Initialize nodes
+        for (let i = 0; i < numNodes; i++) {
+            nodes.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                radius: 3,
+                active: Math.random() > 0.5
+            });
+        }
+
+        // Initialize connections
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                if (Math.random() < connectionProbability) {
+                    connections.push({
+                        from: i,
+                        to: j,
+                        signal: 0,
+                        active: false
+                    });
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw nodes
+            nodes.forEach((node, i) => {
+                // Update position
+                node.x += node.vx;
+                node.y += node.vy;
+
+                // Bounce off walls
+                if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+                if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+
+                // Draw node
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                ctx.fillStyle = node.active ? '#ffffff' : '#444';
+                ctx.fill();
+
+                // Randomly change active state
+                if (Math.random() < 0.01) node.active = !node.active;
+            });
+
+            // Draw connections and update signals
+            connections.forEach(conn => {
+                const from = nodes[conn.from];
+                const to = nodes[conn.to];
+
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
+                
+                // Signal propagation
+                if (from.active && to.active) {
+                    conn.signal = Math.min(1, conn.signal + 0.1);
+                } else {
+                    conn.signal = Math.max(0, conn.signal - 0.1);
+                }
+
+                ctx.strokeStyle = `rgba(255, 255, 255, ${conn.signal * 0.2})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

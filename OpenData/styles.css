@@ -1,0 +1,975 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative; /* Needed for z-index context */
+
+    /* New CSS Variables */
+    --palm-graphite:#0E1113;
+    --palm-card:#1A2024;
+    --palm-card-gradient:linear-gradient(#1A2024,#0E1113);
+    --palm-glass:rgba(0,0,0,.55);
+    --palm-light:#FFFFFF;
+    --palm-light-rgb:255,255,255; /* For use in rgba() */
+    --palm-muted:#C8C9CB;
+    --palm-divider:#3F4448;
+    --palm-link:#0CB5E9;
+    --palm-cyan:#1BB2E8;
+    --palm-green:#00A000;
+    --palm-red:#FF3B30;
+    --palm-orange:#FF9500;
+
+    /* Transition Variables */
+    --palm-transition-duration: .28s;
+    --palm-transition-timing: cubic-bezier(.22,.61,.36,1);
+    --palm-transition: transform var(--palm-transition-duration) var(--palm-transition-timing);
+    --palm-background-transition: background var(--palm-transition-duration) var(--palm-transition-timing);
+    --palm-color-transition: color var(--palm-transition-duration) var(--palm-transition-timing);
+}
+
+/* New: Starfield Canvas Styles */
+#starfield-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Place it behind all other content */
+    background-color: var(--palm-graphite); /* Apply graphite background to starfield */
+}
+
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    padding-bottom: 100px; /* Add space for the dock */
+    position: relative; /* Ensure content is above the starfield */
+    z-index: 1; /* Make sure app content is above the starfield */
+}
+
+.app-title {
+    color: var(--palm-light); /* Apply palm-light */
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.app-subtitle {
+    color: var(--palm-light); /* Apply palm-light (changed from --palm-muted) */
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 12px 24px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    line-height: 1.6;
+}
+
+.cards-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    position: relative;
+    padding-top: 50px;
+}
+
+/* NEW: Carousel controls styling */
+.carousel-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.carousel-btn {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--palm-light);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all var(--palm-transition-duration) var(--palm-transition-timing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    line-height: 1;
+}
+
+.carousel-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.carousel-indicator {
+    color: var(--palm-light);
+    font-size: 0.9rem;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+}
+
+.app-card {
+    background: var(--palm-card); /* Apply palm-card */
+    border-radius: 20px;
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--palm-transition), background var(--palm-transition-duration) var(--palm-transition-timing); /* Animate transform and background */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); /* Adjusted shadow for dark theme */
+    position: relative;
+    overflow: hidden;
+    width: 300px;
+    height: 250px;
+    margin: 0 -30px;
+    transform-origin: bottom center;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.app-card:first-child {
+    margin-left: 0;
+}
+
+.app-card:last-child {
+    margin-right: 0;
+}
+
+/* Initial rotation rules - these will be overridden by JS for dynamic re-alignment */
+.app-card:nth-child(1) {
+    --initial-rotate: -15deg;
+    transform: rotate(var(--initial-rotate));
+    z-index: 4;
+}
+
+.app-card:nth-child(2) {
+    --initial-rotate: -5deg;
+    transform: rotate(var(--initial-rotate));
+    z-index: 3;
+}
+
+.app-card:nth-child(3) {
+    --initial-rotate: 5deg;
+    transform: rotate(var(--initial-rotate));
+    z-index: 2;
+}
+
+.app-card:nth-child(4) {
+    --initial-rotate: 15deg;
+    transform: rotate(var(--initial-rotate));
+    z-index: 1;
+}
+
+.app-card:hover {
+    transform: translateY(-20px) scale(1.05) rotate(var(--initial-rotate));
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4); /* Adjusted shadow for dark theme */
+    z-index: 5; /* Should be higher than other cards */
+}
+
+.app-card.active {
+    background: var(--palm-card-gradient); /* Apply palm-card-gradient to active cards */
+    color: var(--palm-light); /* Set text color for active card */
+    transform: translateY(-40px) scale(1.1) rotate(0deg) !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5); /* Adjusted shadow for dark theme */
+    z-index: 6; /* Should be highest */
+    cursor: default;
+}
+
+.cards-container.panel-open .app-card:not(.active) {
+    opacity: 0.85; /* Apply 85% opacity when minimized/not active */
+    transform: scale(0.9) translateY(0) rotate(var(--initial-rotate)) !important;
+    pointer-events: none;
+    filter: blur(2px);
+}
+
+/* New: Styles for card removal animation */
+.app-card.removing {
+    opacity: 0;
+    transform: translateY(-150%) scale(0.8) rotate(0deg) !important; /* Slide up and fade out */
+    transition: opacity var(--palm-transition-duration) var(--palm-transition-timing), transform var(--palm-transition-duration) var(--palm-transition-timing);
+    pointer-events: none; /* Make it unclickable during removal */
+}
+
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.app-card h3 {
+    color: var(--palm-light); /* Apply palm-light */
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.app-card p {
+    color: var(--palm-light); /* Apply palm-light for better contrast on dark cards */
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Ensure ALL text within cards is white, including dynamically generated content */
+.app-card *,
+.app-card h1,
+.app-card h2,
+.app-card h3,
+.app-card h4,
+.app-card h5,
+.app-card h6,
+.app-card p,
+.app-card span,
+.app-card div,
+.app-card li,
+.app-card a,
+.app-card strong,
+.app-card em,
+.app-card b,
+.app-card i {
+    color: var(--palm-light) !important;
+}
+
+.card-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--palm-link), var(--palm-cyan)); /* Use link/cyan for indicator */
+    transform: scaleX(0);
+    transition: transform var(--palm-transition-duration) var(--palm-transition-timing);
+}
+
+.app-card:hover .card-indicator {
+    transform: scaleX(1);
+}
+
+.content-panel {
+    position: fixed;
+    top: 0;
+    right: 0; /* Keep initial positioning for transform to work */
+    transform: translateX(100%); /* Start off-screen to the right */
+    width: 100%;
+    max-width: 500px;
+    height: 100vh;
+    background: var(--palm-glass); /* Apply palm-glass */
+    backdrop-filter: blur(8px); /* Apply blur */
+    box-shadow: -5px 0 20px rgba(0,0,0,0.3); /* Adjusted shadow */
+    transition: var(--palm-transition); /* Apply palm-transition */
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.content-panel.active {
+    transform: translateX(0); /* Slide in */
+}
+
+.panel-header {
+    background: var(--palm-card-gradient); /* Apply palm-card-gradient */
+    color: var(--palm-light); /* Apply palm-light */
+    padding: 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--palm-light);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all var(--palm-transition-duration) var(--palm-transition-timing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.close-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.panel-content {
+    padding: 2rem;
+}
+
+.content-section {
+    margin-bottom: 2rem;
+}
+
+.content-section h3 {
+    color: var(--palm-light); /* Apply palm-light */
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid rgba(63,68,72,.3); /* Apply divider color */
+    padding-bottom: 0.5rem;
+}
+
+.content-section h4 {
+    color: var(--palm-light); /* Apply palm-light */
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+    margin-top: 1.5rem;
+    border-bottom: 1px solid rgba(63,68,72,.2); /* Thinner border for h4 */
+    padding-bottom: 0.3rem;
+}
+
+.content-section h5 {
+    color: var(--palm-cyan); /* Apply palm-cyan for distinction */
+    font-size: 1rem;
+    margin-bottom: 0.6rem;
+    margin-top: 1.2rem;
+    font-weight: 600;
+}
+
+.content-section h6 {
+    color: var(--palm-muted); /* Apply palm-muted for less prominent headings */
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.content-section ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.content-section li {
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--palm-muted); /* Apply palm-muted */
+    line-height: 1.6;
+}
+
+.content-section li:before {
+    content: "•";
+    color: var(--palm-link); /* Apply palm-link */
+    position: absolute;
+    left: 0;
+}
+
+.content-section p {
+    color: var(--palm-light); /* Ensure text is visible within content sections of panels */
+}
+
+/* Ensure ALL text within content sections is white, including dynamically generated content */
+.content-section *,
+.content-section h1,
+.content-section h2,
+.content-section h3,
+.content-section h4,
+.content-section h5,
+.content-section h6,
+.content-section p,
+.content-section span,
+.content-section div,
+.content-section li,
+.content-section a,
+.content-section strong,
+.content-section em,
+.content-section b,
+.content-section i {
+    color: var(--palm-light) !important;
+}
+
+.contact-card {
+    background: var(--palm-card); /* Apply palm-card */
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.contact-card h4 {
+    color: var(--palm-light); /* Apply palm-light */
+    margin-bottom: 0.5rem;
+}
+
+.contact-card p {
+    color: var(--palm-muted); /* Apply palm-muted */
+    margin-bottom: 0.25rem;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+    overflow: hidden;
+    margin-top: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* New: Styles for the Dock */
+.app-dock {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 10px 0 15px 0;
+    background: rgba(0, 0, 0, 0.35); /* Made more translucent */
+    backdrop-filter: blur(10px); /* Frosted glass effect (user asked for 8px for panels, but 10px seems ok for dock, keeping existing) */
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3); /* Adjusted shadow */
+    z-index: 1001;
+    transition: var(--palm-transition), opacity var(--palm-transition-duration) var(--palm-transition-timing); /* Apply palm-transition for transform and opacity */
+}
+
+.app-dock.hidden {
+    transform: translateY(100%);
+    pointer-events: none; /* Prevent interaction when hidden */
+    opacity: 0; /* Fade out effect */
+}
+
+.dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end; /* Align icon and text to bottom */
+    margin: 0 15px;
+    cursor: pointer;
+    transition: transform var(--palm-transition-duration) var(--palm-transition-timing); /* Apply palm-transition for transform */
+    color: var(--palm-light); /* Apply palm-light */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.dock-item img {
+    width: 50px; /* Icon size */
+    height: 50px;
+    object-fit: contain;
+    margin-bottom: 5px; /* Space between icon and text */
+}
+
+.dock-item span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--palm-muted); /* Apply palm-muted for secondary text */
+    opacity: 0.9;
+}
+
+/* New: Styles for the Dock Panel */
+.dock-panel {
+    position: fixed;
+    bottom: 0; /* Keep initial positioning for transform to work */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%) translateY(100%); /* Start off-screen at the bottom, centered */
+    width: 100%;
+    max-width: 450px; /* Constrain width for a mobile-like feel */
+    max-height: 90vh; /* Max height so dock might still be visible, or full height */
+    background: var(--palm-glass); /* Apply palm-glass */
+    backdrop-filter: blur(8px); /* Apply blur */
+    box-shadow: 0 -5px 30px rgba(0,0,0,0.4); /* Adjusted shadow */
+    transition: var(--palm-transition); /* Apply palm-transition */
+    overflow-y: auto;
+    z-index: 1002; /* Higher than content-panel */
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    display: flex;
+    flex-direction: column; /* To make header sticky at top of panel */
+    
+    /* Hide scrollbar while maintaining scroll functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.dock-panel::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.dock-panel.active {
+    transform: translateX(-50%) translateY(0); /* Slide in and remain centered */
+}
+
+/* Styles for full-screen dock panel (e.g., for "Cultura Viva Mx") */
+.dock-panel.full-screen {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw; /* Override max-width */
+    max-height: 100vh; /* Override max-height */
+    transform: none; /* Remove horizontal centering for full screen */
+    border-radius: 0; /* Remove border-radius for full screen */
+}
+
+.dock-panel.full-screen .panel-header {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/* New: Styles for full-screen dock panel content */
+.dock-panel.full-screen .panel-content {
+    padding: 0; /* Remove padding for full-screen content */
+    display: flex; /* Ensure it's a flex container for its children to grow */
+    flex-direction: column; /* Stack children vertically */
+}
+
+/* Reuse existing panel header/content styles where applicable */
+.dock-panel .panel-header {
+    background: var(--palm-card-gradient); /* Apply palm-card-gradient */
+    color: var(--palm-light); /* Apply palm-light */
+    padding: 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-top-left-radius: 20px; /* Match panel radius */
+    border-top-right-radius: 20px;
+}
+
+.dock-panel .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--palm-light);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all var(--palm-transition-duration) var(--palm-transition-timing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dock-panel .close-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dock-panel .panel-content {
+    flex-grow: 1; /* Allow content to take remaining space and scroll */
+    padding: 2rem;
+}
+
+/* Specific styles for dock content, if needed */
+.chat-input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.chat-input-area textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(63,68,72,.3); /* Apply divider color */
+    border-radius: 8px;
+    font-size: 1rem;
+    resize: vertical;
+    background-color: var(--palm-card); /* Consistent with card background */
+    color: var(--palm-light); /* Text color inside textarea */
+}
+
+.chat-input-area button {
+    padding: 10px 20px;
+    background: var(--palm-link); /* Apply palm-link */
+    color: var(--palm-light); /* Apply palm-light */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: var(--palm-background-transition); /* Animate background */
+}
+
+.chat-input-area button:hover {
+    background: var(--palm-cyan); /* Apply palm-cyan on hover */
+}
+
+/* New: Progress Bar Styles */
+.progress-area {
+    margin-top: 20px;
+    display: none; /* Hidden by default */
+    text-align: center;
+}
+
+.progress-message {
+    color: var(--palm-muted);
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(63,68,72,.3); /* Lighter gray for container */
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--palm-link), var(--palm-cyan));
+    border-radius: 4px;
+    transition: width 0.8s ease-out; /* Smooth transition for progress */
+}
+
+.history-list {
+    list-style: none;
+    padding: 0;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--palm-link) rgba(63, 68, 72, 0.3);
+}
+
+.history-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: rgba(63, 68, 72, 0.3);
+    border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: var(--palm-link);
+    border-radius: 4px;
+    transition: background var(--palm-transition-duration) var(--palm-transition-timing);
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: var(--palm-cyan);
+}
+
+.history-list li {
+    margin-bottom: 10px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(26, 32, 36, 0.5);
+    border-radius: 8px;
+    transition: background var(--palm-transition-duration) var(--palm-transition-timing);
+}
+
+.history-item:hover {
+    background: rgba(26, 32, 36, 0.8);
+}
+
+.history-item a {
+    flex: 1;
+    color: var(--palm-link);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--palm-transition-duration) var(--palm-transition-timing);
+}
+
+.history-item a:hover {
+    color: var(--palm-cyan);
+}
+
+.history-timestamp {
+    color: var(--palm-muted);
+    font-size: 0.85em;
+    font-weight: normal;
+}
+
+.history-delete-btn {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--palm-light);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all var(--palm-transition-duration) var(--palm-transition-timing);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.history-delete-btn:hover {
+    background: rgba(255, 59, 48, 0.8);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.clear-history-btn {
+    background: var(--palm-red); /* Apply palm-red */
+    color: var(--palm-light); /* Apply palm-light */
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: var(--palm-background-transition); /* Animate background */
+}
+
+.clear-history-btn:hover {
+    background: var(--palm-red); /* Keep same or slightly darker red on hover, user didn't specify */
+}
+
+.recommendation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.recommendation-item {
+    background: var(--palm-card); /* Apply palm-card */
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.recommendation-item h4 {
+    color: var(--palm-light); /* Apply palm-light */
+    margin-bottom: 5px;
+}
+
+.recommendation-item p {
+    color: var(--palm-muted); /* Apply palm-muted */
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+}
+
+/* Ensure all general text within dock panel content is white */
+.dock-panel .panel-content p,
+.dock-panel .panel-content li {
+    color: var(--palm-light);
+}
+
+/* Ensure paragraph text within specific cards inside dock panel is white */
+.dock-panel .recommendation-item p,
+.dock-panel .contact-card p {
+    color: var(--palm-light);
+}
+
+.btn-more-info {
+    display: inline-block;
+    background: var(--palm-link); /* Apply palm-link */
+    color: var(--palm-light); /* Apply palm-light */
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--palm-background-transition); /* Animate background */
+}
+
+.btn-more-info:hover {
+    background: var(--palm-cyan); /* Apply palm-cyan on hover */
+}
+
+.external-link {
+    display: inline-block;
+    background: var(--palm-link); /* Apply palm-link */
+    color: var(--palm-light); /* Apply palm-light */
+    padding: 8px 15px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-top: 10px;
+    transition: var(--palm-background-transition); /* Animate background */
+}
+
+.external-link:hover {
+    background: var(--palm-cyan); /* Apply palm-cyan on hover */
+}
+
+/* New: Toggle Switch Styles */
+.switch input:checked + span {
+    background-color: var(--palm-link) !important;
+}
+
+.switch input:checked + span + span {
+    transform: translateX(26px) !important;
+}
+
+.amplify-btn:hover:not(:disabled) {
+    background: var(--palm-cyan) !important;
+}
+
+.amplify-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.app-card.amplifying::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--palm-divider);
+    border-top-color: var(--palm-cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 10;
+}
+
+.app-card.amplified::after {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    background: var(--palm-green);
+    color: var(--palm-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    animation: checkmark-pop 0.3s ease-out;
+    z-index: 10;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes checkmark-pop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .app-title {
+        font-size: 2rem;
+    }
+    
+    .cards-container {
+        flex-direction: column;
+        align-items: center;
+        padding-top: 0;
+        margin-bottom: 1rem;
+    }
+    .app-card {
+        margin: 0 0 1rem 0;
+        width: 90%;
+        height: auto;
+        transform: rotate(0deg) !important; /* Override initial rotations on small screens */
+        z-index: auto !important; /* Reset z-index on small screens */
+    }
+
+    .app-card:first-child, .app-card:last-child {
+        margin: 0 0 1rem 0;
+    }
+
+    .app-card.active {
+        transform: translateY(-10px) scale(1.05) rotate(0deg) !important;
+    }
+
+    .cards-container.panel-open .app-card:not(.active) {
+        transform: scale(0.95) !important;
+    }
+    
+    .content-panel {
+        max-width: 100%;
+    }
+
+    .app-dock {
+        padding: 5px 0 10px 0; /* Adjust padding for smaller screens */
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+    }
+
+    .dock-item {
+        margin: 0 10px;
+    }
+
+    .dock-item img {
+        width: 40px; /* Smaller icons on mobile */
+        height: 40px;
+    }
+
+    .dock-item span {
+        font-size: 0.7rem;
+    }
+
+    .dock-panel {
+        max-height: 90vh; /* Allow it to take up more screen on mobile */
+    }
+    .recommendation-grid {
+        grid-template-columns: 1fr; /* Stack on mobile */
+    }
+
+    .dock-panel.full-screen {
+        /* On small screens, full-screen is still full-screen, but ensure it doesn't break. */
+        /* These rules are already general enough for small screens due to vw/vh units. */
+    }
+}
