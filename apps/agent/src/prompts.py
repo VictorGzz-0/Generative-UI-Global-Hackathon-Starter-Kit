@@ -272,17 +272,74 @@ _INTEGRATION_STATUS_TEMPLATE = (
 )
 
 
+# ─────────────────────────────────────────────────────────────────────
+# ADA IA — International commerce advisor prompt
+# ─────────────────────────────────────────────────────────────────────
+
+ADA_PROMPT = (
+    "You are ADA, an AI advisor created by the Centro de Investigación y\n"
+    "Docencia Económicas (CIDE). Your mission is to support users in\n"
+    "strengthening their international trade strategies and attracting\n"
+    "investment in Mexico.\n\n"
+    "AREAS OF EXPERTISE:\n"
+    "- Foreign Direct Investment (FDI) attraction: identify opportunities\n"
+    "  to invest in Mexico's strategic sectors.\n"
+    "- Mexican export promotion: find ideal international markets for\n"
+    "  Mexican products.\n"
+    "- Enterprise internationalization: design strategies for Mexican\n"
+    "  companies to expand abroad.\n"
+    "- Strengthening Mexico's global image: support projects that boost\n"
+    "  the country's international presence.\n\n"
+    "DATA SOURCES:\n"
+    "- You have access to DataMéxico and other institutional databases\n"
+    "  for detailed reports on companies, sectors, and relevant contacts.\n\n"
+    "FRONTEND TOOLS:\n"
+    "- renderAdaReport({title, content}): render a styled report card\n"
+    "  inline in the chat. Use this to present structured analysis,\n"
+    "  data summaries, or recommendations. The content field accepts\n"
+    "  HTML. Use it liberally to structure your answers.\n\n"
+    "OPEN GENERATIVE UI:\n"
+    "- Any tool you call without a dedicated render slot will fall through\n"
+    "  to a generic card showing tool name + arguments + result.\n\n"
+    "INTERACTION POLICY:\n"
+    "- Always answer in the same language as the user's message.\n"
+    "- When presenting analysis, use renderAdaReport to show structured\n"
+    "  sections (each section as its own card).\n"
+    "- Keep conversational replies concise; let the rendered cards carry\n"
+    "  the detailed content.\n"
+    "- If you don't know something, say so honestly rather than inventing\n"
+    "  data.\n"
+)
+
+
 def build_system_prompt(integration_status: str) -> str:
     """Compose the system prompt with a live integration-status block.
+
+    Uses `AGENT_PERSONA` env var to select between:
+    - "ada" (default when AGENT_RUNTIME=deepseek): ADA international commerce advisor
+    - "lead-triage" (default otherwise): Workshop Lead Triage workspace
 
     `integration_status` should be a short, single-line-or-few-line summary
     of the Notion health-check result so the agent can short-circuit with
     a meaningful error on the first turn instead of pretending to import.
     """
+    import os
+
+    persona = os.getenv("AGENT_PERSONA", "").lower()
+    runtime = os.getenv("AGENT_RUNTIME", "gemini-flash-deep").lower()
+
+    # Auto-detect: if runtime is deepseek and no explicit persona, use ADA
+    if not persona:
+        persona = "ada" if runtime == "deepseek" else "lead-triage"
+
     status_block = _INTEGRATION_STATUS_TEMPLATE.format(
         integration_status=integration_status.strip()
         or "unknown — health check did not run"
     )
+
+    if persona == "ada":
+        return ADA_PROMPT + "\n\n" + status_block
+
     return (
         LEAD_TRIAGE_PROMPT
         + "\n\n"
@@ -295,3 +352,4 @@ def build_system_prompt(integration_status: str) -> str:
 SYSTEM_PROMPT = build_system_prompt(
     "unknown — health check has not run yet"
 )
+

@@ -6,11 +6,10 @@
 #   2. npx is available so `@notionhq/notion-mcp-server` can be fetched
 #      on demand. We don't pull the package here (slow) — we just prove
 #      the resolver works.
-#   3. apps/agent/.env exists and has GEMINI_API_KEY, NOTION_TOKEN, and
-#      NOTION_LEADS_DATABASE_ID set to non-stub values.
-#   4. Notion is reachable AND the leads database is shared with the
-#      integration. Defers to `apps/agent/src/notion_tools.py --check`, which
-#      reports an actionable FAIL: with the share-gotcha fix on a 404.
+#   3. apps/agent/.env exists and has the right API key for the selected
+#      AGENT_RUNTIME (GEMINI_API_KEY for gemini-*, DEEPSEEK_API_KEY for
+#      deepseek, ANTHROPIC_API_KEY for claude-*).
+#   4. Notion vars are only checked when NOTION_TOKEN is set (optional).
 #
 # Collects every problem into a numbered list rather than bailing on the
 # first failure, so participants can fix the whole batch in one pass.
@@ -49,33 +48,52 @@ else
     local v="$1"
     [[ -z "$v" ]] && return 0
     case "$v" in
-      stub*|"<paste"*|"<set"*|"replace-with-"*) return 0 ;;
+      stub*|"<paste"*|"<set"*|"replace-with-"*|"tu-clave-aqui") return 0 ;;
     esac
     return 1
   }
-  for VAR in GEMINI_API_KEY NOTION_TOKEN NOTION_LEADS_DATABASE_ID; do
-    val="$(read_var "$VAR" || true)"
-    if is_stub "$val"; then
-      case "$VAR" in
-        GEMINI_API_KEY)
-          PROBLEMS+=("$VAR is unset (or a stub) in apps/agent/.env. Get a key at https://aistudio.google.com -> Get API key.")
-          ;;
-        NOTION_TOKEN)
-          PROBLEMS+=("$VAR is unset (or a stub) in apps/agent/.env. Get a token at https://notion.so/my-integrations -> New integration -> Internal Integration Token.")
-          ;;
-        NOTION_LEADS_DATABASE_ID)
-          PROBLEMS+=("$VAR is unset in apps/agent/.env. Paste the database id from your Notion database URL.")
-          ;;
-      esac
+
+  # Detect which runtime is selected
+  AGENT_RUNTIME="$(read_var AGENT_RUNTIME || true)"
+  AGENT_RUNTIME="${AGENT_RUNTIME:-gemini-flash-deep}"
+
+  # Check the API key that matches the selected runtime
+  case "$AGENT_RUNTIME" in
+    deepseek)
+      val="$(read_var DEEPSEEK_API_KEY || true)"
+      if is_stub "$val"; then
+        PROBLEMS+=("DEEPSEEK_API_KEY is unset (or a placeholder) in apps/agent/.env. Get a key at https://platform.deepseek.com -> API keys.")
+      fi
+      ;;
+    claude-*)
+      val="$(read_var ANTHROPIC_API_KEY || true)"
+      if is_stub "$val"; then
+        PROBLEMS+=("ANTHROPIC_API_KEY is unset (or a stub) in apps/agent/.env.")
+      fi
+      ;;
+    gemini-*|*)
+      val="$(read_var GEMINI_API_KEY || true)"
+      if is_stub "$val"; then
+        PROBLEMS+=("GEMINI_API_KEY is unset (or a stub) in apps/agent/.env. Get a key at https://aistudio.google.com -> Get API key.")
+      fi
+      ;;
+  esac
+
+  # Notion is optional — only check if NOTION_TOKEN is explicitly set
+  notion_token="$(read_var NOTION_TOKEN || true)"
+  if [[ -n "$notion_token" ]] && ! is_stub "$notion_token"; then
+    notion_db="$(read_var NOTION_LEADS_DATABASE_ID || true)"
+    if is_stub "$notion_db"; then
+      PROBLEMS+=("NOTION_TOKEN is set but NOTION_LEADS_DATABASE_ID is empty in apps/agent/.env. Paste the database id from your Notion database URL, or remove NOTION_TOKEN to skip Notion.")
     fi
-  done
+  fi
 fi
 
 # ---------- 4. Notion reachable + database shared ---------------------------
-# Only run the live health check if the env vars passed (no point hitting the
-# network when we know auth will fail). The script prints OK: ... or FAIL: ...
-# with the share-gotcha fix on a 404.
-if [[ ${#PROBLEMS[@]} -eq 0 ]]; then
+# Only run the live health check if Notion vars passed (skip if Notion not configured).
+notion_token_val="$(read_var NOTION_TOKEN 2>/dev/null || true)"
+notion_db_val="$(read_var NOTION_LEADS_DATABASE_ID 2>/dev/null || true)"
+if [[ ${#PROBLEMS[@]} -eq 0 ]] && [[ -n "$notion_token_val" ]] && ! is_stub "$notion_token_val" && [[ -n "$notion_db_val" ]]; then
   HEALTH_OUT="$(cd "$REPO_ROOT/apps/agent" && uv run python -m src.notion_tools --check 2>&1 || true)"
   if ! grep -q "^OK: " <<<"$HEALTH_OUT"; then
     # Pass the FAIL output through verbatim — the --check flag already
@@ -109,3 +127,4 @@ if [[ ${#PROBLEMS[@]} -gt 0 ]]; then
 fi
 
 exit 0
+

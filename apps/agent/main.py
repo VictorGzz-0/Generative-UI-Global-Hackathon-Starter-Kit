@@ -82,6 +82,16 @@ if _AGENT_RUNTIME.startswith("gemini-") and (
         flush=True,
     )
 
+_deepseek_key = os.getenv("DEEPSEEK_API_KEY") or ""
+if _AGENT_RUNTIME == "deepseek" and not _deepseek_key:
+    print(
+        "\n  DEEPSEEK_API_KEY is unset.\n"
+        "   The agent will boot but chat will fail on the first turn.\n"
+        "   Get a key at https://platform.deepseek.com → API keys,\n"
+        "   then set DEEPSEEK_API_KEY in agent/.env.\n",
+        flush=True,
+    )
+
 
 backend_tools = load_notion_tools()
 
@@ -91,12 +101,20 @@ SYSTEM_PROMPT = build_system_prompt(_integration_status)
 
 
 _use_noop = (
-    _AGENT_RUNTIME.startswith("gemini-")
-    and (not _gemini_key or _gemini_key.startswith("stub"))
+    (
+        _AGENT_RUNTIME.startswith("gemini-")
+        and (not _gemini_key or _gemini_key.startswith("stub"))
+    )
+    or (
+        _AGENT_RUNTIME == "deepseek" and not _deepseek_key
+    )
 )
 if _use_noop:
+    _missing_key = (
+        "DEEPSEEK_API_KEY" if _AGENT_RUNTIME == "deepseek" else "GEMINI_API_KEY"
+    )
     print(
-        "\n[runtime] GEMINI_API_KEY missing or stub — using noop fallback graph.\n"
+        f"\n[runtime] {_missing_key} missing or stub — using noop fallback graph.\n"
         "          Chat will reply with a setup pointer instead of hanging.\n",
         flush=True,
     )

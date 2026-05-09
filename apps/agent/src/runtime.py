@@ -30,6 +30,7 @@ RuntimeName = Literal[
     "gemini-flash-deep",
     "gemini-flash-react",
     "claude-sonnet-4-6-react",
+    "deepseek",
     "noop",
 ]
 
@@ -38,6 +39,7 @@ _VALID_RUNTIMES = (
     "gemini-flash-deep",
     "gemini-flash-react",
     "claude-sonnet-4-6-react",
+    "deepseek",
     "noop",
 )
 
@@ -91,6 +93,8 @@ def build_graph(
         return _build_gemini_react(tools, system_prompt, middleware)
     if runtime == "claude-sonnet-4-6-react":
         return _build_claude_react(tools, system_prompt, middleware)
+    if runtime == "deepseek":
+        return _build_deepseek_react(tools, system_prompt, middleware)
 
     # Unreachable (validated above) — placate type-checker
     raise RuntimeError(f"unreachable runtime branch: {runtime!r}")
@@ -196,6 +200,43 @@ def _build_gemini_react(
     from langchain.agents import create_agent
 
     llm = _gemini_llm()
+    return create_agent(
+        model=llm,
+        tools=tools,
+        system_prompt=system_prompt,
+        middleware=middleware,
+    )
+
+
+# ------------------------------------------------------------------- deepseek
+
+def _build_deepseek_react(
+    tools: list, system_prompt: str, middleware: list
+) -> CompiledStateGraph:
+    """DeepSeek (latest) on the react agent factory.
+
+    DeepSeek exposes an OpenAI-compatible API, so we use
+    `langchain-openai`'s `ChatOpenAI` pointed at `https://api.deepseek.com`.
+    Requires `DEEPSEEK_API_KEY` in the environment.
+    """
+    from langchain.agents import create_agent
+    from langchain_openai import ChatOpenAI
+
+    api_key = os.getenv("DEEPSEEK_API_KEY") or ""
+    if not api_key:
+        print(
+            "\n  DEEPSEEK_API_KEY is unset.\n"
+            "   The agent will boot but the first chat turn will fail with an\n"
+            "   auth error. Set DEEPSEEK_API_KEY in agent/.env.\n",
+            flush=True,
+        )
+
+    llm = ChatOpenAI(
+        model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+        temperature=0,
+        api_key=api_key or "stub",
+        base_url="https://api.deepseek.com",
+    )
     return create_agent(
         model=llm,
         tools=tools,
